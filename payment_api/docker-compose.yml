@@ -1,0 +1,54 @@
+services:
+  payment-postgres:
+    container_name: payment_postgres
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    ports:
+      - "5434:5432"
+    volumes:
+      - payment_postgres_data:/var/lib/postgresql/data
+    networks:
+      - billing_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 3s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+  payment-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: payment_api
+    env_file:
+      - .env
+    expose:
+      - "8000"
+    volumes:
+      - .:/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    # ports:
+    #   - "8002:8000"
+    depends_on:
+      payment-postgres:
+        condition: service_healthy
+    networks:
+      - billing_network
+      - shared_infra
+    restart: unless-stopped
+
+
+volumes:
+  payment_postgres_data:
+    driver: local
+
+networks:
+  billing_network:
+    driver: bridge
+    name: billing_network
+  shared_infra:
+    external: true
+    name: shared_infra

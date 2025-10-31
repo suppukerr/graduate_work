@@ -1,0 +1,43 @@
+services:
+  admin-panel:
+    build: .
+    container_name: admin_panel
+    env_file:
+      - .env
+    expose:
+      - "8002"
+      # - "8000"
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - AUTH_POSTGRES_HOST=${AUTH_POSTGRES_HOST}
+      - AUTH_POSTGRES_PORT=${AUTH_POSTGRES_PORT}
+      - AUTH_POSTGRES_USER=${AUTH_POSTGRES_USER}
+      - AUTH_POSTGRES_PASSWORD=${AUTH_POSTGRES_PASSWORD}
+      - AUTH_POSTGRES_DB=${AUTH_POSTGRES_DB}
+      - ADMIN_SECRET_KEY=${ADMIN_SECRET_KEY}
+      - AUTH_API_URL=${AUTH_API_URL}
+    networks:
+      - admin_network
+      - shared_infra
+      - billing_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+networks:
+  shared_infra:
+    external: true
+    name: shared_infra
+  admin_network:
+    driver: bridge
+    name: admin-network
+  billing_network:
+    external: true
+    name: billing_network
